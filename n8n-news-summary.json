@@ -1,0 +1,421 @@
+{
+  "name": "n8n-news-summary",
+  "nodes": [
+    {
+      "parameters": {
+        "text": "={{ $json.htmlContent }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "summary",
+              "description": "Summary of the document",
+              "required": true
+            },
+            {
+              "name": "url",
+              "description": "={{ $json.url }}"
+            },
+            {
+              "name": "keywords",
+              "description": "Keywords"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "=Summarize the following article content in 1 sentence. Then, extract 3-5 relevant keywords.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        1744,
+        -16
+      ],
+      "id": "d1c20d70-04c4-41a7-bd54-0ca0d877e32a",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        976,
+        -16
+      ],
+      "id": "1aab850a-e770-4d13-80a2-08a0c637fb37",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        288
+      ],
+      "id": "21f28162-e208-431c-8156-d56c3292cd13",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "22b51479-202f-4532-af35-9223bac82c36",
+              "leftValue": "={{ $json.htmlContent }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1504,
+        0
+      ],
+      "id": "259c1a76-a4ae-403a-9d0e-91da35538c37",
+      "name": "check htmlContent field"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1248,
+        -16
+      ],
+      "id": "3b5435b6-1fe1-4035-907e-6be4831b7e14",
+      "name": "Loop articles"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ddd70fd6-14c2-4d8d-a40d-e40d39af64d0",
+              "leftValue": "={{ $json.results.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a30db77c-9c06-438f-aeff-06e5daf66bc9",
+      "name": "are there new articles?"
+    },
+    {
+      "parameters": {
+        "url": "https://readwise.io/api/v3/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "location",
+              "value": "feed"
+            },
+            {
+              "name": "=updatedAfter",
+              "value": "={{$now.minus({hours:1}).toISO()}}"
+            },
+            {
+              "name": "withHtmlContent",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c8323d81-ad1d-4646-a280-95f7f5647fb7",
+      "name": "fetch Readwise feed",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "LsT11G5RHBsKWCfI",
+          "name": "readwise token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b89440b-b754-4581-a74d-cdd56cfe865a",
+              "name": "results",
+              "value": "={{ $json.results.map(x => ({ title: x.title, url: x.url, date: x.published_date, htmlContent: x.html_content })) }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        -16
+      ],
+      "id": "48479c8b-8d1c-47d1-a40a-d92bc77fc53e",
+      "name": "parse results"
+    },
+    {
+      "parameters": {
+        "chatId": "669562882",
+        "text": "=<a href=\"{{ $json.output.url }}\">Link</a>     |    <b>Keywords:</b>: <i>{{ $json.output.keywords }}</i>    |    <b>Summary:</b> {{ $json.output.summary }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2080,
+        -16
+      ],
+      "id": "65180cb1-5412-4e79-bfc8-4cb580b191c9",
+      "name": "Send summary",
+      "webhookId": "39bc8b7b-65ce-4e84-93ff-8874afe0cdc8",
+      "credentials": {
+        "telegramApi": {
+          "id": "QKjpRnVKiy5SWisT",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "7d5492d3-cdcc-44d8-8c85-560c90c8ad94",
+      "name": "Run each hour"
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b",
+        "options": {
+          "temperature": 0.5,
+          "numPredict": 400
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        272
+      ],
+      "id": "5b445f82-320c-46c0-8db4-940e97e29f5f",
+      "name": "ollama gpt-oss:20b",
+      "credentials": {
+        "ollamaApi": {
+          "id": "1q57hS00h9iYuVX8",
+          "name": "Ollama account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Send summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "fetch Readwise feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check htmlContent field": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop articles": {
+      "main": [
+        [],
+        [
+          {
+            "node": "check htmlContent field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "are there new articles?": {
+      "main": [
+        [
+          {
+            "node": "parse results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch Readwise feed": {
+      "main": [
+        [
+          {
+            "node": "are there new articles?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse results": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send summary": {
+      "main": [
+        [
+          {
+            "node": "Loop articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run each hour": {
+      "main": [
+        [
+          {
+            "node": "fetch Readwise feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ollama gpt-oss:20b": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 1800,
+    "availableInMCP": false
+  },
+  "versionId": "4eed5576-364e-4225-b541-1fab803ddbca",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c04e0254baccfaf6fdafcffb9777d7804ff9efd3d1710c9963a6bb61ad8cd97b"
+  },
+  "id": "Z2Ilua7weAhjLksv",
+  "tags": []
+}
