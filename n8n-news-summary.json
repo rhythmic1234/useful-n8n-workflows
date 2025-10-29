@@ -28,8 +28,8 @@
       "type": "@n8n/n8n-nodes-langchain.informationExtractor",
       "typeVersion": 1.2,
       "position": [
-        1744,
-        -16
+        1680,
+        -272
       ],
       "id": "d1c20d70-04c4-41a7-bd54-0ca0d877e32a",
       "name": "Information Extractor"
@@ -42,8 +42,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        976,
-        -16
+        1008,
+        -224
       ],
       "id": "1aab850a-e770-4d13-80a2-08a0c637fb37",
       "name": "Split Out"
@@ -53,8 +53,8 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        0,
-        288
+        112,
+        -52
       ],
       "id": "21f28162-e208-431c-8156-d56c3292cd13",
       "name": "When clicking ‘Execute workflow’"
@@ -87,8 +87,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1504,
-        0
+        1456,
+        -272
       ],
       "id": "259c1a76-a4ae-403a-9d0e-91da35538c37",
       "name": "check htmlContent field"
@@ -100,8 +100,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        1248,
-        -16
+        1232,
+        -224
       ],
       "id": "3b5435b6-1fe1-4035-907e-6be4831b7e14",
       "name": "Loop articles"
@@ -133,8 +133,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        416,
-        0
+        560,
+        -224
       ],
       "id": "a30db77c-9c06-438f-aeff-06e5daf66bc9",
       "name": "are there new articles?"
@@ -166,8 +166,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        208,
-        0
+        336,
+        -224
       ],
       "id": "c8323d81-ad1d-4646-a280-95f7f5647fb7",
       "name": "fetch Readwise feed",
@@ -196,8 +196,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        704,
-        -16
+        784,
+        -224
       ],
       "id": "48479c8b-8d1c-47d1-a40a-d92bc77fc53e",
       "name": "parse results"
@@ -214,8 +214,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2080,
-        -16
+        2032,
+        -148
       ],
       "id": "65180cb1-5412-4e79-bfc8-4cb580b191c9",
       "name": "Send summary",
@@ -241,8 +241,8 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -32,
-        0
+        -112,
+        -244
       ],
       "id": "7d5492d3-cdcc-44d8-8c85-560c90c8ad94",
       "name": "Run each hour"
@@ -258,8 +258,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmOllama",
       "typeVersion": 1,
       "position": [
-        1824,
-        272
+        1752,
+        -48
       ],
       "id": "5b445f82-320c-46c0-8db4-940e97e29f5f",
       "name": "ollama gpt-oss:20b",
@@ -269,6 +269,50 @@
           "name": "Ollama account"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a7913b01-e08b-4eab-b718-414d1ca01067",
+              "leftValue": "={{ $now.hour }}",
+              "rightValue": 23,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "912bceec-7b6b-47ee-9a5f-c49f13cc6440",
+              "leftValue": "={{ $now.hour }}",
+              "rightValue": 6,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        -244
+      ],
+      "id": "dee87afb-609a-40ab-8def-4b2cb1b90b77",
+      "name": "check if night time"
     }
   ],
   "pinData": {},
@@ -384,7 +428,7 @@
       "main": [
         [
           {
-            "node": "fetch Readwise feed",
+            "node": "check if night time",
             "type": "main",
             "index": 0
           }
@@ -401,6 +445,18 @@
           }
         ]
       ]
+    },
+    "check if night time": {
+      "main": [
+        [],
+        [
+          {
+            "node": "fetch Readwise feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -411,7 +467,7 @@
     "executionTimeout": 1800,
     "availableInMCP": false
   },
-  "versionId": "4eed5576-364e-4225-b541-1fab803ddbca",
+  "versionId": "8faa37d0-55a6-4d93-977d-c66f22e033b5",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "c04e0254baccfaf6fdafcffb9777d7804ff9efd3d1710c9963a6bb61ad8cd97b"
